@@ -11,10 +11,6 @@ mixin VendingMachine {
 
   @protected
   double insertedBalance = 0.0;
-  @protected
-  int currentRow = -1;
-  @protected
-  int currentColumn = -1;
 
   @protected
   void showOnDisplay(String message) {
