@@ -27,7 +27,6 @@ class Card extends MoneySlot {
   }
 
   void charge(double amount) {
-    //set amount = to item price
-    //validate and charge the credit card for the item amount
+    // get money from card = item price.
   }
 }
