@@ -17,18 +17,16 @@ mixin VendingMachine {
   int currentColumn = -1;
 
   @protected
-  void readKeypad() {
-    //get the user input from the keypad and sets the current values
-  }
-
-  @protected
   void showOnDisplay(String message) {
     display.displayMessage(message: message);
   }
 
-  void typeOnKeypad(int row, int column);
+  @protected
+  void readKeypad(int row, int column);
 
+  @protected
   void insertMoney(MoneySlot money);
 
+  @protected
   List<double> refund(double remaining);
 }

@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Vending Machine',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -38,7 +39,13 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
   final int columns = 5;
 
   Item selectedItem = Item(name: '-1');
-  List<List<Item>> items = [[]];
+
+  List<List<Item>> items = List.generate(
+    5,
+    (i) => List.filled(5, Item()),
+    growable: false,
+  );
+
   Map<double, int> availableMoney = {
     50.0: 0,
     20.0: 0,
@@ -52,7 +59,12 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
   void initState() {
     super.initState();
 
-    initState();
+    initialize();
+
+    print(availableMoney);
+    print(items);
+
+    print(totalAvailableBalance());
   }
 
   void initialize() {
@@ -64,7 +76,7 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
     for (int r = 0; r < rows; r++)
       for (int c = 0; c < columns; c++)
         items[r][c] = Item(
-          name: 'item $r $c',
+          name: 'item $r$c',
           price: randomNumber,
           quantity: 15,
         );
@@ -76,7 +88,7 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
 
   double get randomNumber {
     Random random = Random();
-    return random.nextDouble() * 100;
+    return double.parse((random.nextDouble() * 100).toStringAsExponential(2));
   }
 
   double totalAvailableBalance() {
@@ -90,23 +102,30 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Text('Vending Machine'),
-      ),
-    );
+  void showOnDisplay(String message) {
+    super.showOnDisplay(message);
+
+    keypad.reset();
+
+    setState(() {
+      display.setMessage(message);
+    });
   }
 
   @override
-  void typeOnKeypad(int row, int column) {
+  void readKeypad(int row, int column) {
     keypad.setRow(row);
     keypad.setColumn(column);
 
+    if (!keypad.validateInput()) {
+      showOnDisplay('(item $row$column) not valid');
+
+      return;
+    }
+
     selectedItem = items[row][column];
+
+    print(selectedItem.getName);
 
     // in case there is no enough quantity of this item
     if (selectedItem.getQuantity <= 0) {
@@ -127,7 +146,8 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
     }
     //else: show the selected item price.
     else {
-      showOnDisplay('${selectedItem.getName} price: ${selectedItem.getPrice}');
+      showOnDisplay(
+          '(${selectedItem.getName}) price: ${selectedItem.getPrice}');
     }
   }
 
@@ -147,8 +167,9 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
 
       change = calculateChange(remaining);
 
+      // when you have balance in machine but not the appropriate type.
       if (change.isEmpty) {
-        showOnDisplay('no suffecient change');
+        showOnDisplay('no appropriate change');
         return;
       }
 
@@ -162,6 +183,8 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
     // 1- the inserted balance is equal to item price. (no change is required).
     // 2- if you have enough change to give it back to user.
     selectedItem.subtract();
+
+    showOnDisplay('thank you!');
   }
 
   List<double> calculateChange(double remaining) {
@@ -223,5 +246,103 @@ class _SnacksMachineState extends State<SnackMachine> with VendingMachine {
     });
 
     return change;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+      ),
+      body: Container(
+        width: MediaQuery.of(context).size.width,
+        padding: EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              decoration: BoxDecoration(
+                border: Border.all(),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              alignment: Alignment.center,
+              constraints: BoxConstraints(minHeight: kToolbarHeight),
+              child: Text(
+                display.getMessage(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(
+              thickness: 4,
+              height: 40,
+            ),
+            Text(
+              'Select Item',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(
+              height: 4,
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.6,
+              child: Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                direction: Axis.horizontal,
+                spacing: 6,
+                children: List<ElevatedButton>.generate(
+                  10,
+                  (index) => ElevatedButton(
+                    onPressed: () {
+                      if (keypad.getRow.isNegative)
+                        keypad.setRow(index);
+                      else
+                        keypad.setColumn(index);
+
+                      if (!keypad.getRow.isNegative &&
+                          !keypad.getColumn.isNegative)
+                        readKeypad(keypad.getRow, keypad.getColumn);
+                    },
+                    child: Text(
+                      index.toString(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Divider(
+              thickness: 4,
+              height: 40,
+            ),
+            Text(
+              'Insert Money',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(
+              height: 4,
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width * 0.6,
+              child: Wrap(
+                alignment: WrapAlignment.spaceEvenly,
+                direction: Axis.horizontal,
+                spacing: 6,
+                children: List<ElevatedButton>.generate(
+                  11,
+                  (index) => ElevatedButton(
+                    onPressed: () {},
+                    child: Text(
+                      index < 10 ? index.toString() : '.',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
