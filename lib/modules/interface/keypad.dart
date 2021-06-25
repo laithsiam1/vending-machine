@@ -3,8 +3,8 @@ class Keypad {
   int _column;
 
   Keypad({
-    int row = 0,
-    int column = 0,
+    int row = -1,
+    int column = -1,
   })  : _row = row,
         _column = column;
 
@@ -24,8 +24,15 @@ class Keypad {
     return _column;
   }
 
-  // bool validateInput() {
-  //   //validates if the user input is within the supported range
-  //   return true;
-  // }
+  void reset() {
+    this._row = -1;
+    this._column = -1;
+  }
+
+  bool validateInput() {
+    if (this._row < 5 && this._column < 5)
+      return true;
+    else
+      return false;
+  }
 }
